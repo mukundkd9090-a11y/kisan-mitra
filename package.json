@@ -1,0 +1,19 @@
+{
+  "name": "kisanmitra",
+  "version": "1.0.0",
+  "description": "KisanMitra – Farmer Procurement Queue & Status Intelligence System",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,FRONTEND,AI_MODEL\" -c \"bgBlue.bold,bgGreen.bold,bgMagenta.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\" \"python3 ai-service/main.py\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:ai": "python3 ai-service/main.py",
+    "install:all": "npm --prefix backend install && npm --prefix frontend install && pip3 install -r ai-service/requirements.txt",
+    "db:push": "npm --prefix backend run prisma:push",
+    "db:seed": "npm --prefix backend run seed",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

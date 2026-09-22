@@ -1,0 +1,101 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  fullName      String
+  mobile        String         @unique
+  email         String?        @unique
+  password      String
+  role          String         @default("FARMER") // FARMER, ADMIN
+  state         String
+  district      String
+  village       String?
+  tokens        Token[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model ProcurementCentre {
+  id              String   @id @default(uuid())
+  name            String
+  code            String   @unique
+  state           String
+  district        String
+  address         String
+  capacityPerDay  Int      @default(150)
+  activeCounters  Int      @default(3)
+  contactNumber   String?
+  isActive        Boolean  @default(true)
+  tokens          Token[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Token {
+  id                   String            @id @default(uuid())
+  tokenNumber          String            @unique
+  farmerId             String
+  farmer               User              @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  centreId             String
+  centre               ProcurementCentre @relation(fields: [centreId], references: [id], onDelete: Cascade)
+  cropType             String            // Wheat, Rice, Maize, Mustard, Pulses, Sugarcane
+  estimatedQuantity    Float             @default(25.0) // quintals
+  stage                String            @default("GENERATED") 
+  // Stages: GENERATED -> DOCS_VERIFIED -> PRODUCE_RECEIVED -> QUALITY_CHECKED -> ACCEPTED / REJECTED -> PAYMENT_PROCESSED
+  queuePosition        Int               @default(1)
+  arrivalWindowStart   String            // e.g. "10:30 AM"
+  arrivalWindowEnd     String            // e.g. "11:00 AM"
+  tokenDate            String            // e.g. "2026-09-02"
+  estimatedWaitMinutes Int               @default(30)
+  
+  // Inspection & Payout Details
+  qualityGrade         String?           // Grade A, Grade B, Fair Average Quality (FAQ)
+  moisturePercent      Float?            // e.g. 11.8
+  netWeightQuintal     Float?            // e.g. 32.4
+  mspRate              Float?            // e.g. 2425 (per quintal)
+  totalPayout          Float?            // e.g. 78570
+  
+  // Priority Management
+  isPriority           Boolean           @default(false)
+  priorityReason       String?
+  remarks              String?
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenNumber String?
+  title       String
+  titleHi     String
+  message     String
+  messageHi   String
+  type        String   @default("TOKEN") // TOKEN, STATUS, PAYMENT, BROADCAST
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id                  String   @id @default(uuid())
+  operatorId          String?
+  operator            User?    @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+  operatorName        String
+  action              String   // e.g. "PRIORITY_OVERRIDE", "STAGE_ADVANCE", "BULK_BROADCAST"
+  reason              String?
+  affectedTokenNumber String?
+  farmerName          String?
+  details             String?
+  timestamp           DateTime @default(now())
+}
